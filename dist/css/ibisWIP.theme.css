@@ -178,7 +178,7 @@
 --wel-prim-color-royal-blue-75: #b3b1ff;
 --wel-prim-color-royal-blue-86: #d6d3ff;
 --wel-prim-color-royal-blue-92: #e9e5ff;
---wel-prim-color-royal-blue-95: #f3f0ff;
+--wel-prim-color-royal-blue-95: #f3efff;
 --wel-prim-color-electric-blue-10: #001159;
 --wel-prim-color-electric-blue-28: #002eb9;
 --wel-prim-color-electric-blue-30: #0733c0;
@@ -599,7 +599,7 @@
 --wel-sem-line-heights-link-sm: 1.25rem;
 --wel-sem-line-heights-link-md: 1.5rem;
 --wel-sem-color-brand-logos: #000000;
---wel-sem-color-loyalty-container-low: #f3f0ff;
+--wel-sem-color-loyalty-container-low: #f3efff;
 --wel-sem-color-loyalty-container-hi: #d6d3ff;
 --wel-sem-color-on-loyalty-container-low: #3a34ab;
 --wel-sem-color-on-loyalty-container-hi: #3a34ab;
@@ -1327,7 +1327,7 @@
 }
 [data-color-mode="light"] {
 --wel-sem-color-brand-logos: #000000;
---wel-sem-color-loyalty-container-low: #f3f0ff;
+--wel-sem-color-loyalty-container-low: #f3efff;
 --wel-sem-color-loyalty-container-hi: #d6d3ff;
 --wel-sem-color-on-loyalty-container-low: #3a34ab;
 --wel-sem-color-on-loyalty-container-hi: #3a34ab;
