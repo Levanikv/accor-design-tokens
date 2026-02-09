@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 jobs:
@@ -43,22 +43,40 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: latest
+          ref: app
           fetch-depth: 0
+
+      - name: Copy Android tokens from latest
+        run: |
+          BRANCH="sync-android-tokens"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin latest
+          # Create or reset the sync branch from app
+          git checkout -B "$BRANCH" origin/app
+          # Copy only dist/android/ from latest
+          git checkout origin/latest -- dist/android/
+          # Commit if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes in dist/android/"
+          else
+            git commit -m "chore: sync Android Compose tokens from latest"
+            git push -f origin "$BRANCH"
+          fi
 
       - name: Create or update PR to app
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          EXISTING=$(gh pr list --base app --head latest --json number -q '.[0].number')
+          EXISTING=$(gh pr list --base app --head sync-android-tokens --json number -q '.[0].number')
           if [ -n "$EXISTING" ]; then
-            echo "PR #$EXISTING already exists for latest → app"
+            echo "PR #$EXISTING already exists for sync-android-tokens → app"
           else
             gh pr create \
               --base app \
-              --head latest \
+              --head sync-android-tokens \
               --title "chore: sync Android Compose tokens → app" \
               --body "Auto-generated PR from **latest** branch.
 
-          Contains Android Compose tokens updates (\`dist/android/\`)."
+          Contains only Android Compose token files (\`dist/android/\`)."
           fi
