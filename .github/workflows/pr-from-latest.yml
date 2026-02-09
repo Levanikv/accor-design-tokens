@@ -6,6 +6,7 @@ name: PR from latest
 on:
   push:
     branches: [latest]
+  workflow_dispatch:
 
 permissions:
   contents: read
