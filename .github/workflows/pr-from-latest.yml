@@ -1,0 +1,63 @@
+# Quand on push sur "latest", ouvre automatiquement :
+#   - une PR vers "main" (tokens web : JSON, CSS, SCSS)
+#   - une PR vers "app"  (tokens Android Compose : .kt)
+name: PR from latest
+
+on:
+  push:
+    branches: [latest]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  pr-to-main:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: latest
+          fetch-depth: 0
+
+      - name: Create or update PR to main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          EXISTING=$(gh pr list --base main --head latest --json number -q '.[0].number')
+          if [ -n "$EXISTING" ]; then
+            echo "PR #$EXISTING already exists for latest → main"
+          else
+            gh pr create \
+              --base main \
+              --head latest \
+              --title "chore: sync design tokens → main" \
+              --body "Auto-generated PR from **latest** branch.
+
+          Contains web tokens updates (JSON, CSS, SCSS) and Android Compose tokens."
+          fi
+
+  pr-to-app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: latest
+          fetch-depth: 0
+
+      - name: Create or update PR to app
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          EXISTING=$(gh pr list --base app --head latest --json number -q '.[0].number')
+          if [ -n "$EXISTING" ]; then
+            echo "PR #$EXISTING already exists for latest → app"
+          else
+            gh pr create \
+              --base app \
+              --head latest \
+              --title "chore: sync Android Compose tokens → app" \
+              --body "Auto-generated PR from **latest** branch.
+
+          Contains Android Compose tokens updates (\`dist/android/\`)."
+          fi
