@@ -385,7 +385,7 @@ internal object AccorColorPrimitives {
     val Royalblue8 = Color(0xFF0B005E)
     val Royalblue86 = Color(0xFFD6D3FF)
     val Royalblue92 = Color(0xFFE9E5FF)
-    val Royalblue95 = Color(0xFFF3F0FF)
+    val Royalblue95 = Color(0xFFF3EFFF)
     val Silver31 = Color(0xFF49494B)
     val Silver41 = Color(0xFF5F6063)
     val Silver50 = Color(0xFF76777A)
