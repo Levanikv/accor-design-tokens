@@ -1,5 +1,5 @@
-# Quand on push sur "latest", ouvre automatiquement :
-#   - une PR vers "main" (tokens web : JSON, CSS, SCSS)
+# Quand on push sur "latest", build les tokens puis ouvre automatiquement :
+#   - une PR vers "main" (tokens web : JSON, CSS, SCSS + Android)
 #   - une PR vers "app"  (tokens Android Compose : .kt)
 name: PR from latest
 
@@ -13,7 +13,40 @@ permissions:
   pull-requests: write
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: latest
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Build all tokens
+        run: npm run build
+
+      - name: Commit dist if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dist/
+          if git diff --staged --quiet; then
+            echo "No build changes to commit."
+          else
+            git commit -m "chore: rebuild dist from latest sources"
+            git push origin latest
+          fi
+
   pr-to-main:
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,6 +72,7 @@ jobs:
           fi
 
   pr-to-app:
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
