@@ -1,0 +1,52 @@
+[
+  {
+    "id": "all",
+    "name": "ALL",
+    "fileName": "all.theme.css"
+  },
+  {
+    "id": "brandBook",
+    "name": "BRANDBOOK",
+    "fileName": "brandBook.theme.css"
+  },
+  {
+    "id": "fairmontWIP",
+    "name": "FAIRMONTWIP",
+    "fileName": "fairmontWIP.theme.css"
+  },
+  {
+    "id": "handwrittenWIP",
+    "name": "HANDWRITTENWIP",
+    "fileName": "handwrittenWIP.theme.css"
+  },
+  {
+    "id": "ibisWIP",
+    "name": "IBISWIP",
+    "fileName": "ibisWIP.theme.css"
+  },
+  {
+    "id": "movenpick",
+    "name": "MOVENPICK",
+    "fileName": "movenpick.theme.css"
+  },
+  {
+    "id": "novotelWIP",
+    "name": "NOVOTELWIP",
+    "fileName": "novotelWIP.theme.css"
+  },
+  {
+    "id": "pullmanWIP",
+    "name": "PULLMANWIP",
+    "fileName": "pullmanWIP.theme.css"
+  },
+  {
+    "id": "rafflesWIP",
+    "name": "RAFFLESWIP",
+    "fileName": "rafflesWIP.theme.css"
+  },
+  {
+    "id": "sofitelWIP",
+    "name": "SOFITELWIP",
+    "fileName": "sofitelWIP.theme.css"
+  }
+]
