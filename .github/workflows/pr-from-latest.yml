@@ -47,6 +47,7 @@ jobs:
           fetch-depth: 0
 
       - name: Copy Android tokens from latest
+        id: sync
         run: |
           BRANCH="sync-android-tokens"
           git config user.name "github-actions[bot]"
@@ -58,13 +59,16 @@ jobs:
           git checkout origin/latest -- dist/android/
           # Commit if there are changes
           if git diff --staged --quiet; then
-            echo "No changes in dist/android/"
+            echo "No changes in dist/android/, skipping."
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
           else
             git commit -m "chore: sync Android Compose tokens from latest"
             git push -f origin "$BRANCH"
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Create or update PR to app
+        if: steps.sync.outputs.has_changes == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
