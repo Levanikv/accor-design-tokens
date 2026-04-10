@@ -1,6 +1,6 @@
-# Quand on push sur "latest", build les tokens puis ouvre automatiquement :
-#   - une PR vers "main" (tokens web : JSON, CSS, SCSS + Android)
-#   - une PR vers "app"  (tokens Android Compose : .kt)
+# Quand on push sur "latest" :
+#   - ouvre une PR vers "main" (tokens web : JSON, CSS, SCSS)
+#   - build les tokens Android Compose et ouvre une PR dans le repo android-tokens-poc
 name: PR from latest
 
 on:
@@ -68,53 +68,82 @@ jobs:
               --title "chore: sync design tokens → main" \
               --body "Auto-generated PR from **latest** branch.
 
-          Contains web tokens updates (JSON, CSS, SCSS) and Android Compose tokens."
+          Contains web tokens updates (JSON, CSS, SCSS)."
           fi
 
-  pr-to-app:
-    needs: build
+  sync-to-android-repo:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout design tokens repo
+        uses: actions/checkout@v4
         with:
-          ref: app
-          fetch-depth: 0
+          ref: latest
 
-      - name: Copy Android tokens from latest
-        id: sync
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Android Compose tokens
+        run: npm run build:app
+
+      - name: Clone target Android repo
+        env:
+          GH_TOKEN: ${{ secrets.ANDROID_REPO_TOKEN }}
         run: |
-          BRANCH="sync-android-tokens"
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin latest
-          # Create or reset the sync branch from app
-          git checkout -B "$BRANCH" origin/app
-          # Copy only dist/android/ from latest
-          git checkout origin/latest -- dist/android/
-          # Commit if there are changes
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/Levanikv/android-tokens-poc.git" target-repo
+
+      - name: Copy Compose tokens into target repo
+        id: sync
+        env:
+          GH_TOKEN: ${{ secrets.ANDROID_REPO_TOKEN }}
+        run: |
+          cd target-repo
+          git config user.name "design-tokens-bot"
+          git config user.email "design-tokens-bot@users.noreply.github.com"
+
+          BRANCH="sync-design-tokens"
+          git fetch origin
+          if git show-ref --verify --quiet "refs/remotes/origin/$BRANCH"; then
+            git checkout -B "$BRANCH" "origin/$BRANCH"
+            git reset --hard origin/main
+          else
+            git checkout -B "$BRANCH" origin/main
+          fi
+
+          mkdir -p designtokens
+          rm -f designtokens/*.kt
+          cp ../dist/android/*.kt designtokens/
+
+          git add designtokens/
           if git diff --staged --quiet; then
-            echo "No changes in dist/android/, skipping."
+            echo "No changes in designtokens/, skipping."
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
           else
-            git commit -m "chore: sync Android Compose tokens from latest"
+            git commit -m "chore: sync design tokens from Figma"
             git push -f origin "$BRANCH"
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Create or update PR to app
+      - name: Create or update PR in Android repo
         if: steps.sync.outputs.has_changes == 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.ANDROID_REPO_TOKEN }}
         run: |
-          EXISTING=$(gh pr list --base app --head sync-android-tokens --json number -q '.[0].number')
+          cd target-repo
+          EXISTING=$(gh pr list --repo Levanikv/android-tokens-poc --base main --head sync-design-tokens --json number -q '.[0].number')
           if [ -n "$EXISTING" ]; then
-            echo "PR #$EXISTING already exists for sync-android-tokens → app"
+            echo "PR #$EXISTING already exists, branch was force-pushed with latest tokens."
           else
             gh pr create \
-              --base app \
-              --head sync-android-tokens \
-              --title "chore: sync Android Compose tokens → app" \
-              --body "Auto-generated PR from **latest** branch.
+              --repo Levanikv/android-tokens-poc \
+              --base main \
+              --head sync-design-tokens \
+              --title "chore: sync design tokens from Figma" \
+              --body "Auto-generated PR from [accor-design-tokens](https://github.com/Levanikv/accor-design-tokens) \`latest\` branch.
 
-          Contains only Android Compose token files (\`dist/android/\`)."
+          Contains updated Compose color tokens in \`designtokens/\`."
           fi
