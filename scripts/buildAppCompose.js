@@ -267,7 +267,7 @@ export async function buildAppCompose() {
 
   // First, collect primitive colors for reverse lookup
   const primitiveCollectSD = new StyleDictionary({
-    source: ['src/primitives/**/*.json'],
+    source: ['src/primitives/all.json'],
     log: { verbosity: 'silent' },
     platforms: {
       compose: {
@@ -284,7 +284,7 @@ export async function buildAppCompose() {
 
   // Build primitives file
   const primitiveSD = new StyleDictionary({
-    source: ['src/primitives/**/*.json'],
+    source: ['src/primitives/all.json'],
     log: { verbosity: 'default' },
     platforms: {
       compose: {
@@ -306,7 +306,7 @@ export async function buildAppCompose() {
   // Collect Light mode colors
   const lightSD = new StyleDictionary({
     source: [
-      'src/primitives/**/*.json',
+      'src/primitives/all.json',
       'src/brands/brandBook.json',
       'src/colorModes/light.json'
     ],
@@ -341,7 +341,7 @@ export async function buildAppCompose() {
   // Collect Dark mode colors
   const darkSD = new StyleDictionary({
     source: [
-      'src/primitives/**/*.json',
+      'src/primitives/all.json',
       'src/brands/brandBook.json',
       'src/colorModes/dark.json'
     ],

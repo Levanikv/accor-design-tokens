@@ -78,13 +78,6 @@ function makeColorsetContents(lightRgba, darkRgba) {
   };
 }
 
-function makeFolderContents() {
-  return {
-    info: { author: 'xcode', version: 1 },
-    properties: { 'provides-namespace': true }
-  };
-}
-
 // ─── Token naming helpers ───────────────────────────────────
 
 // kebab-case → camelCase
@@ -93,44 +86,6 @@ function toCamelCase(str) {
     .split('-')
     .map((part, i) => i === 0 ? part.toLowerCase() : part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
     .join('');
-}
-
-// Determine the iOS folder category from a token name
-// Rules based on iOS repo structure:
-//   outline-* → outline/
-//   overlay-* → overlay/
-//   gradient-* → gradient/
-//   shadow-* → shadow/
-//   on-X-* → X/ (e.g., on-danger → danger/)
-//   X-container-* → X/ (e.g., danger-container-hi → danger/)
-//   others → first word as category
-const PREFIX_CATEGORIES = ['outline', 'overlay', 'gradient', 'shadow'];
-
-// Loyalty tier tokens → grouped under loyalty_status
-const LOYALTY_TIERS = ['classic', 'diamond', 'gold', 'limitless', 'platinum', 'silver'];
-
-function getCategory(tokenName) {
-  const parts = tokenName.split('-');
-
-  // prefix categories: outline-*, overlay-*, gradient-*, shadow-*
-  if (PREFIX_CATEGORIES.includes(parts[0])) {
-    return parts[0];
-  }
-
-  // on-X-* → category is X (recurse to apply loyalty_status etc.)
-  if (parts[0] === 'on') {
-    const inner = parts[1] || parts[0];
-    if (LOYALTY_TIERS.includes(inner)) return 'loyalty_status';
-    return inner;
-  }
-
-  // Loyalty tiers → loyalty_status
-  if (LOYALTY_TIERS.includes(parts[0])) {
-    return 'loyalty_status';
-  }
-
-  // X-container-*, X-anything → category is X
-  return parts[0];
 }
 
 // ─── Collect tokens via Style Dictionary ────────────────────
@@ -184,43 +139,24 @@ function writeXcassets(outputDir) {
     JSON.stringify({ info: { author: 'xcode', version: 1 } }, null, 2) + '\n'
   );
 
-  // Group tokens by category
-  const categories = new Map();
-  for (const [tokenName, colors] of colorsMap.entries()) {
-    const category = getCategory(tokenName);
-    if (!categories.has(category)) {
-      categories.set(category, []);
-    }
-    categories.get(category).push({ tokenName, colors });
-  }
-
+  // Flat structure: all colorsets directly in Colors.xcassets/
   let totalColorsets = 0;
 
-  for (const [category, tokens] of Array.from(categories.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
-    const categoryDir = path.join(xcassetsDir, category);
-    fs.mkdirSync(categoryDir, { recursive: true });
+  const sortedTokens = Array.from(colorsMap.entries()).sort((a, b) => a[0].localeCompare(b[0]));
 
-    // Category folder Contents.json
+  for (const [tokenName, colors] of sortedTokens) {
+    const colorsetName = toCamelCase(tokenName);
+    const colorsetDir = path.join(xcassetsDir, `${colorsetName}.colorset`);
+    fs.mkdirSync(colorsetDir, { recursive: true });
+
+    const contents = makeColorsetContents(colors.light, colors.dark);
     fs.writeFileSync(
-      path.join(categoryDir, 'Contents.json'),
-      JSON.stringify(makeFolderContents(), null, 2) + '\n'
+      path.join(colorsetDir, 'Contents.json'),
+      JSON.stringify(contents, null, 2) + '\n'
     );
-
-    for (const { tokenName, colors } of tokens.sort((a, b) => a.tokenName.localeCompare(b.tokenName))) {
-      const colorsetName = toCamelCase(tokenName);
-      const colorsetDir = path.join(categoryDir, `${colorsetName}.colorset`);
-      fs.mkdirSync(colorsetDir, { recursive: true });
-
-      const contents = makeColorsetContents(colors.light, colors.dark);
-      fs.writeFileSync(
-        path.join(colorsetDir, 'Contents.json'),
-        JSON.stringify(contents, null, 2) + '\n'
-      );
-      totalColorsets++;
-    }
+    totalColorsets++;
   }
 
-  console.log(`  - ${categories.size} categories`);
   console.log(`  - ${totalColorsets} colorsets`);
 }
 
@@ -233,7 +169,7 @@ export async function buildAppiOS() {
 
   // Collect light mode
   const lightSD = new StyleDictionary({
-    source: ['src/primitives/**/*.json', 'src/brands/brandBook.json', 'src/colorModes/light.json'],
+    source: ['src/primitives/all.json', 'src/brands/brandBook.json', 'src/colorModes/light.json'],
     log: { verbosity: 'silent', errors: { brokenReferences: 'warn' } },
     platforms: {
       ios: {
@@ -255,7 +191,7 @@ export async function buildAppiOS() {
 
   // Collect dark mode
   const darkSD = new StyleDictionary({
-    source: ['src/primitives/**/*.json', 'src/brands/brandBook.json', 'src/colorModes/dark.json'],
+    source: ['src/primitives/all.json', 'src/brands/brandBook.json', 'src/colorModes/dark.json'],
     log: { verbosity: 'silent', errors: { brokenReferences: 'warn' } },
     platforms: {
       ios: {
