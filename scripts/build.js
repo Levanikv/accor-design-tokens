@@ -20,6 +20,7 @@ import { logVerbosityLevels, logWarningLevels, transforms } from 'style-dictiona
 
 import { buildMergedThemeTokens } from './tokenBuilder.js';
 import { buildAppCompose } from './buildAppCompose.js';
+import { buildAppiOS } from './buildAppiOS.js';
 import { getFilesInDir } from './jsonUtils.js';
 import { cssTransform, lineHeightsToRem, scssTransform } from './transforms.js';
 
@@ -234,6 +235,12 @@ async function build() {
         fs.mkdirSync(androidDir, { recursive: true });
       }
       await buildAppCompose();
+
+      const iosDir = path.join(distDir, 'ios');
+      if (!fs.existsSync(iosDir)) {
+        fs.mkdirSync(iosDir, { recursive: true });
+      }
+      await buildAppiOS();
     }
 
     console.log('\n✨ Build completed successfully!');
