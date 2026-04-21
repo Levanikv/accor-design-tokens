@@ -24,7 +24,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
 
-      - run: bun install --production --frozen-lockfile || bun install --production
+      - run: bun install
 
       - name: Build all tokens
         run: bun run build
