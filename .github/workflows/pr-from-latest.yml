@@ -1,6 +1,7 @@
 # Quand on push sur "latest" :
-#   - ouvre une PR vers "main" (tokens web)
-#   - build Android + iOS et ouvre une PR dans android-tokens-poc
+#   1. Build all tokens (web + Android + iOS), commit dist/
+#   2. PR vers main (web)
+#   3. PR vers android-tokens-poc (Android + iOS)
 name: PR from latest
 
 on:
@@ -21,14 +22,12 @@ jobs:
           ref: latest
           fetch-depth: 0
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
 
-      - name: Install
-        run: npm ci
+      - run: npm ci
 
       - name: Build all tokens
         run: npm run build
@@ -72,24 +71,12 @@ jobs:
           fi
 
   sync-to-mobile-repo:
+    needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout design tokens repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           ref: latest
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build Android + iOS tokens
-        run: npm run build:app
 
       - name: Clone target mobile repo
         env:
@@ -99,8 +86,6 @@ jobs:
 
       - name: Copy tokens into target repo
         id: sync
-        env:
-          GH_TOKEN: ${{ secrets.ANDROID_REPO_TOKEN }}
         run: |
           cd target-repo
           git config user.name "design-tokens-bot"
@@ -134,6 +119,8 @@ jobs:
             git push -f origin "$BRANCH"
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
           fi
+        env:
+          GH_TOKEN: ${{ secrets.ANDROID_REPO_TOKEN }}
 
       - name: Create or update PR in mobile repo
         if: steps.sync.outputs.has_changes == 'true'
