@@ -27,7 +27,7 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
-      - run: npm ci --omit=dev
+      - run: npm install --no-package-lock --omit=dev --ignore-scripts
 
       - name: Build all tokens
         run: npm run build
