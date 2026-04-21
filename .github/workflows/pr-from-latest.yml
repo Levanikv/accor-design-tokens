@@ -27,7 +27,7 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
-      - run: npm ci
+      - run: npm ci --omit=dev
 
       - name: Build all tokens
         run: npm run build
