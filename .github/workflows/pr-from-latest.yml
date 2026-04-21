@@ -1,6 +1,6 @@
 # Quand on push sur "latest" :
-#   - ouvre une PR vers "main" (tokens web : JSON, CSS, SCSS)
-#   - build les tokens Android Compose et ouvre une PR dans le repo android-tokens-poc
+#   - ouvre une PR vers "main" (tokens web)
+#   - build Android + iOS et ouvre une PR dans android-tokens-poc
 name: PR from latest
 
 on:
@@ -71,7 +71,7 @@ jobs:
           Contains web tokens updates (JSON, CSS, SCSS)."
           fi
 
-  sync-to-android-repo:
+  sync-to-mobile-repo:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout design tokens repo
@@ -87,16 +87,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Android Compose tokens
+      - name: Build Android + iOS tokens
         run: npm run build:app
 
-      - name: Clone target Android repo
+      - name: Clone target mobile repo
         env:
           GH_TOKEN: ${{ secrets.ANDROID_REPO_TOKEN }}
         run: |
           git clone "https://x-access-token:${GH_TOKEN}@github.com/Levanikv/android-tokens-poc.git" target-repo
 
-      - name: Copy Compose tokens into target repo
+      - name: Copy tokens into target repo
         id: sync
         env:
           GH_TOKEN: ${{ secrets.ANDROID_REPO_TOKEN }}
@@ -114,13 +114,19 @@ jobs:
             git checkout -B "$BRANCH" origin/main
           fi
 
-          mkdir -p designtokens
-          rm -f designtokens/*.kt
-          cp ../dist/android/*.kt designtokens/
+          # Android tokens
+          mkdir -p android
+          rm -f android/*.kt
+          cp ../dist/android/*.kt android/
 
-          git add designtokens/
+          # iOS tokens
+          rm -rf ios/Colors.xcassets
+          mkdir -p ios
+          cp -r ../dist/ios/Colors.xcassets ios/
+
+          git add android/ ios/
           if git diff --staged --quiet; then
-            echo "No changes in designtokens/, skipping."
+            echo "No changes, skipping."
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
           else
             git commit -m "chore: sync design tokens from Figma"
@@ -128,7 +134,7 @@ jobs:
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Create or update PR in Android repo
+      - name: Create or update PR in mobile repo
         if: steps.sync.outputs.has_changes == 'true'
         env:
           GH_TOKEN: ${{ secrets.ANDROID_REPO_TOKEN }}
@@ -145,5 +151,7 @@ jobs:
               --title "chore: sync design tokens from Figma" \
               --body "Auto-generated PR from [accor-design-tokens](https://github.com/Levanikv/accor-design-tokens) \`latest\` branch.
 
-          Contains updated Compose color tokens in \`designtokens/\`."
+          Contains updated mobile tokens:
+          - \`android/\` — Compose color files (.kt)
+          - \`ios/\` — Xcode color assets (.xcassets)"
           fi
